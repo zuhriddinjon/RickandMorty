@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/characterCardView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="2dp"
+    android:layout_marginTop="2dp"
+    android:layout_marginEnd="2dp"
+    android:clickable="true"
+    android:elevation="2dp"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/teal_700"
+    app:cardCornerRadius="16dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/cl_character"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_character_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:fontFamily="@font/montserrat"
+            android:lines="1"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_name"
+            android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Rick Morty" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_character_species"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/item_span"
+            android:fontFamily="@font/montserrat"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_species"
+            app:layout_constraintStart_toStartOf="@+id/tv_character_name"
+            app:layout_constraintTop_toBottomOf="@+id/tv_character_name"
+            tools:text="Human" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_character_gender"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:alpha="0.75"
+            android:fontFamily="@font/montserrat"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_gender"
+            app:layout_constraintStart_toStartOf="@+id/tv_character_species"
+            app:layout_constraintTop_toBottomOf="@+id/tv_character_species"
+            tools:text="Male" />
+
+        <androidx.appcompat.widget.AppCompatTextView
+            android:id="@+id/tv_character_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:alpha="0.75"
+            android:drawableStart="@drawable/ic_status_circle"
+            android:drawablePadding="4dp"
+            android:fontFamily="@font/montserrat"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_size_status"
+            app:layout_constraintStart_toStartOf="@+id/tv_character_species"
+            app:layout_constraintTop_toBottomOf="@+id/tv_character_gender"
+            tools:drawableTint="@color/green_a700"
+            tools:text="Alive" />
+
+        <androidx.cardview.widget.CardView
+            android:id="@+id/cv_character_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:cardCornerRadius="16dp"
+            android:layout_marginEnd="4dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tv_character_name">
+
+            <androidx.appcompat.widget.AppCompatImageView
+                android:id="@+id/iv_character_image"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:adjustViewBounds="true"
+                android:transitionName="image_character"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tv_character_name"
+                tools:srcCompat="@tools:sample/avatars" />
+
+        </androidx.cardview.widget.CardView>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.google.android.material.card.MaterialCardView>

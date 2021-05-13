@@ -19,6 +19,15 @@
         <item name="windowNoTitle">true</item>
     </style>
 
+    <style name="Theme.RickAndMorty.TabLayoutText" parent="android:TextAppearance">
+        <item name="android:fontFamily">@font/montserrat</item>
+    </style>
+
+    <style name="TextInputLayoutStyle" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/teal_200</item>
+        <item name="placeholderTextColor">@color/teal_200</item>
+    </style>
+
     <style name="Theme.RickAndMorty.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
 
     <style name="Theme.RickAndMorty.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
