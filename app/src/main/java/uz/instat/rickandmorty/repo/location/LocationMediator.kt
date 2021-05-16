@@ -12,9 +12,8 @@ import uz.instat.rickandmorty.data.local.AppDataBase
 import uz.instat.rickandmorty.data.model.location.LocationKeys
 import uz.instat.rickandmorty.data.model.location.LocationModel
 import uz.instat.rickandmorty.data.remote.ApiService
-import java.io.InvalidObjectException
 
-@ExperimentalPagingApi
+@OptIn(ExperimentalPagingApi::class)
 class LocationMediator(
     private val apiService: ApiService,
     private val appDatabase: AppDataBase
@@ -26,13 +25,22 @@ class LocationMediator(
         state: PagingState<Int, LocationModel>
     ): MediatorResult {
 
-        val pageKeyData = getKeyPageData(loadType, state)
-        val page = when (pageKeyData) {
-            is MediatorResult.Success -> {
-                return pageKeyData
+        val page = when (loadType) {
+            LoadType.REFRESH -> {
+                val remoteKeys = getClosesRemoteKey(state)
+                remoteKeys?.nextKey?.minus(1) ?: Constants.DEFAULT_LOCATIONS_PAGE_INDEX
             }
-            else -> {
-                pageKeyData as Int
+            LoadType.PREPEND -> {
+                val remoteKeys = getFirstRemoteKey(state)
+                val prevKey = remoteKeys?.prevKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                prevKey
+            }
+            LoadType.APPEND -> {
+                val remoteKeys = getLastRemoteKey(state)
+                val nextKey = remoteKeys?.nextKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                nextKey
             }
         }
 
@@ -62,32 +70,6 @@ class LocationMediator(
             return MediatorResult.Success(endOfPaginationReached = isEndOfList)
         } catch (e: Exception) {
             return MediatorResult.Error(e)
-        }
-    }
-
-    private suspend fun getKeyPageData(
-        loadType: LoadType,
-        state: PagingState<Int, LocationModel>
-    ): Any? {
-        return when (loadType) {
-            LoadType.REFRESH -> {
-                val remoteKeys = getClosesRemoteKey(state)
-                remoteKeys?.prevKey?.plus(1) ?: Constants.DEFAULT_LOCATIONS_PAGE_INDEX
-            }
-            LoadType.PREPEND -> {
-                val remoteKeys = getFirstRemoteKey(state)
-                    ?: return Constants.DEFAULT_LOCATIONS_PAGE_INDEX
-                //throw InvalidObjectException("Invalid state, key should not be null")
-                remoteKeys.prevKey ?: return MediatorResult.Success(endOfPaginationReached = true)
-                remoteKeys.prevKey
-            }
-            LoadType.APPEND -> {
-                val remoteKeys = getLastRemoteKey(state)
-                    ?: throw InvalidObjectException("Remote key should not be null for $loadType")
-                remoteKeys.nextKey
-            }
-            else -> {
-            }
         }
     }
 

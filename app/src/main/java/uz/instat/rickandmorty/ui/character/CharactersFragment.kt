@@ -12,15 +12,15 @@ import androidx.navigation.fragment.findNavController
 import androidx.paging.ExperimentalPagingApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import uz.instat.rickandmorty.R
 import uz.instat.rickandmorty.common.lazyFast
+import uz.instat.rickandmorty.data.model.character.CharacterModel
 import uz.instat.rickandmorty.databinding.FragmentCharactersBinding
 import uz.instat.rickandmorty.databinding.ItemCharacterBinding
 import uz.instat.rickandmorty.ui.character.adapter.CharacterAdapter
 import uz.instat.rickandmorty.ui.character.adapter.LoaderStateAdapter
-import uz.instat.rickandmorty.ui.character.info.KEY_CHARACTER_INFO_ID
+import uz.instat.rickandmorty.ui.character.info.KEY_CHARACTER_INFO_MODEL
 
 @ExperimentalPagingApi
 class CharactersFragment : Fragment(), CharacterAdapter.CharacterClickListener {
@@ -36,7 +36,6 @@ class CharactersFragment : Fragment(), CharacterAdapter.CharacterClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         retainInstance = true
-        fetchCharacters()
     }
 
     override fun onCreateView(
@@ -53,13 +52,13 @@ class CharactersFragment : Fragment(), CharacterAdapter.CharacterClickListener {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setUpViews()
-//        fetchCharacters()
+        fetchCharacters()
     }
 
     private fun fetchCharacters() {
         lifecycleScope.launch {
             try {
-                mViewModel.fetchCharacters().distinctUntilChanged().collectLatest {
+                mViewModel.charactersFlow.collectLatest {
                     adapter.submitData(it)
                 }
             } catch (e: Exception) {
@@ -72,8 +71,10 @@ class CharactersFragment : Fragment(), CharacterAdapter.CharacterClickListener {
     private fun setUpViews() {
         binding.charactersRv.layoutManager = //GridLayoutManager(requireContext(), 2)
             LinearLayoutManager(requireContext())
-        binding.charactersRv.adapter =
-            adapter.withLoadStateFooter(loaderStateAdapter)
+        binding.charactersRv.adapter = adapter
+        adapter.withLoadStateHeaderAndFooter(
+            loaderStateAdapter,
+            loaderStateAdapter)
     }
 
     override fun onDestroyView() {
@@ -81,9 +82,9 @@ class CharactersFragment : Fragment(), CharacterAdapter.CharacterClickListener {
         _binding = null
     }
 
-    override fun onCharacterClicked(binding: ItemCharacterBinding, id: Long) {
+    override fun onCharacterClicked(binding: ItemCharacterBinding, model: CharacterModel) {
         val args = bundleOf(
-            Pair(KEY_CHARACTER_INFO_ID, id)
+            Pair(KEY_CHARACTER_INFO_MODEL, model)
         )
         findNavController().navigate(R.id.nav_character_info, args)
     }

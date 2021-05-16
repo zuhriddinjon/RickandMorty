@@ -12,27 +12,36 @@ import uz.instat.rickandmorty.data.local.AppDataBase
 import uz.instat.rickandmorty.data.model.episode.EpisodeKeys
 import uz.instat.rickandmorty.data.model.episode.EpisodeModel
 import uz.instat.rickandmorty.data.remote.ApiService
-import java.io.InvalidObjectException
 
-@ExperimentalPagingApi
+@OptIn(ExperimentalPagingApi::class)
 class EpisodeMediator(
     private val apiService: ApiService,
     private val appDatabase: AppDataBase
-) :
-    RemoteMediator<Int, EpisodeModel>() {
+) : RemoteMediator<Int, EpisodeModel>() {
+    private val episodeDao = appDatabase.episodeDao()
+    private val keyDao = appDatabase.episodeKeysDao()
+
 
     override suspend fun load(
         loadType: LoadType,
         state: PagingState<Int, EpisodeModel>
     ): MediatorResult {
-
-        val pageKeyData = getKeyPageData(loadType, state)
-        val page = when (pageKeyData) {
-            is MediatorResult.Success -> {
-                return pageKeyData
+        val page = when (loadType) {
+            LoadType.REFRESH -> {
+                val remoteKeys = getClosesRemoteKey(state)
+                remoteKeys?.nextKey?.minus(1) ?: Constants.DEFAULT_EPISODES_PAGE_INDEX
             }
-            else -> {
-                pageKeyData as Int
+            LoadType.PREPEND -> {
+                val remoteKeys = getFirstRemoteKey(state)
+                val prevKey = remoteKeys?.prevKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                prevKey
+            }
+            LoadType.APPEND -> {
+                val remoteKeys = getLastRemoteKey(state)
+                val nextKey = remoteKeys?.nextKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                nextKey
             }
         }
 
@@ -50,8 +59,8 @@ class EpisodeMediator(
             val isEndOfList = nextKey == null
             appDatabase.withTransaction {
                 if (loadType == LoadType.REFRESH) {
-                    appDatabase.episodeKeysDao().clearEpisodeKeys()
-                    appDatabase.episodeDao().clearEpisode()
+                    keyDao.clearEpisodeKeys()
+                    episodeDao.clearEpisode()
                 }
                 val keys = result.map {
                     EpisodeKeys(repoId = it.id, prevKey = prevKey, nextKey = nextKey)
@@ -62,32 +71,6 @@ class EpisodeMediator(
             return MediatorResult.Success(endOfPaginationReached = isEndOfList)
         } catch (e: Exception) {
             return MediatorResult.Error(e)
-        }
-    }
-
-    private suspend fun getKeyPageData(
-        loadType: LoadType,
-        state: PagingState<Int, EpisodeModel>
-    ): Any? {
-        return when (loadType) {
-            LoadType.REFRESH -> {
-                val remoteKeys = getClosesRemoteKey(state)
-                remoteKeys?.prevKey?.plus(1) ?: Constants.DEFAULT_EPISODES_PAGE_INDEX
-            }
-            LoadType.PREPEND -> {
-                val remoteKeys = getFirstRemoteKey(state)
-                    ?: return Constants.DEFAULT_EPISODES_PAGE_INDEX
-                //throw InvalidObjectException("Invalid state, key should not be null")
-                remoteKeys.prevKey ?: return MediatorResult.Success(endOfPaginationReached = true)
-                remoteKeys.prevKey
-            }
-            LoadType.APPEND -> {
-                val remoteKeys = getLastRemoteKey(state)
-                    ?: throw InvalidObjectException("Remote key should not be null for $loadType")
-                remoteKeys.nextKey
-            }
-            else -> {
-            }
         }
     }
 
