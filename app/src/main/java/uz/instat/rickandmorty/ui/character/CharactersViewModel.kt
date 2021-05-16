@@ -15,8 +15,16 @@ class CharactersViewModel(
     private val repo: CharactersRepository = CharactersRepository.getInstance()
 ) : ViewModel() {
 
-    fun fetchCharacters(): Flow<PagingData<CharacterModel>> {
-        return try {
+    private lateinit var _charactersFlow: Flow<PagingData<CharacterModel>>
+    val charactersFlow: Flow<PagingData<CharacterModel>>
+        get() = _charactersFlow
+
+    init {
+        fetchCharacters()
+    }
+
+    private fun fetchCharacters() {
+        _charactersFlow= try {
             repo.getCharactersFlowDb().cachedIn(viewModelScope)
         } catch (e: Exception) {
             flowOf(PagingData.empty())

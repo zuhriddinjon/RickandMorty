@@ -1,8 +1,6 @@
 package uz.instat.rickandmorty.ui.location
 
 import android.util.Log
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.paging.ExperimentalPagingApi
@@ -15,14 +13,22 @@ import uz.instat.rickandmorty.repo.location.LocationsRepository
 
 @ExperimentalPagingApi
 class LocationsViewModel(
-    private val repo:LocationsRepository = LocationsRepository.getInstance()
+    private val repo: LocationsRepository = LocationsRepository.getInstance()
 ) : ViewModel() {
 
-    fun fetchLocations(): Flow<PagingData<LocationModel>> {
-        return try {
+
+    private lateinit var _locationsFlow: Flow<PagingData<LocationModel>>
+    val locationsFlow: Flow<PagingData<LocationModel>>
+        get() = _locationsFlow
+
+    init {
+        fetchLocations()
+    }
+
+    private fun fetchLocations() {
+        _locationsFlow = try {
             repo.getLocationsFlowDb().cachedIn(viewModelScope)
         } catch (e: Exception) {
-            Log.d("TAG", "fetchLocations: ${e.message}")
             flowOf(PagingData.empty())
         }
     }

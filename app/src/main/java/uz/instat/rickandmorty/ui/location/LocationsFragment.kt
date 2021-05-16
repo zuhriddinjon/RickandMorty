@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.ExperimentalPagingApi
@@ -61,7 +62,7 @@ class LocationsFragment : Fragment(), LocationAdapter.LocationClickListener,
     private fun fetchLocations() {
         lifecycleScope.launch {
             try {
-                mViewModel.fetchLocations().distinctUntilChanged().collectLatest {
+                mViewModel.locationsFlow.distinctUntilChanged().collectLatest {
                     adapter.submitData(it)
                 }
             } catch (e: Exception) {
@@ -71,10 +72,13 @@ class LocationsFragment : Fragment(), LocationAdapter.LocationClickListener,
     }
 
     private fun setUpViews() {
+        binding.progressBar.isVisible = true
         binding.locationsRv.layoutManager =
             LinearLayoutManager(requireContext())
-        binding.locationsRv.adapter =
-            adapter.withLoadStateFooter(loaderStateAdapter)
+        binding.locationsRv.adapter = adapter
+            adapter.withLoadStateHeaderAndFooter(
+                loaderStateAdapter,
+                loaderStateAdapter)
         binding.locationsSrl.setColorSchemeResources(R.color.pink, R.color.indigo, R.color.lime)
         binding.locationsSrl.setOnRefreshListener(this)
 
@@ -82,6 +86,9 @@ class LocationsFragment : Fragment(), LocationAdapter.LocationClickListener,
             lifecycleScope.launch {
                 loadStateFlow.collectLatest {
                     binding.locationsSrl.isRefreshing = it.refresh is LoadState.Loading
+                    if (it.prepend is LoadState.Loading) {
+                        binding.progressBar.isVisible = false
+                    }
                 }
             }
         }

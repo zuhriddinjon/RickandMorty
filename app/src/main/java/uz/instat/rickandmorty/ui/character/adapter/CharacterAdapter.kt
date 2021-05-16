@@ -92,7 +92,7 @@ class CharacterAdapter(private val characterClickListener: CharacterClickListene
         override fun onClick(v: View?) {
             characterClickListener.onCharacterClicked(
                 binding,
-                model.id
+                model
             )
         }
     }
@@ -106,7 +106,7 @@ class CharacterAdapter(private val characterClickListener: CharacterClickListene
     }
 
     interface CharacterClickListener {
-        fun onCharacterClicked(binding: ItemCharacterBinding, id: Long)
+        fun onCharacterClicked(binding: ItemCharacterBinding, model: CharacterModel)
     }
 
 }

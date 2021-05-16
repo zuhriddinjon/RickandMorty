@@ -5,6 +5,7 @@ import androidx.paging.LoadType
 import androidx.paging.PagingState
 import androidx.paging.RemoteMediator
 import androidx.room.withTransaction
+import retrofit2.HttpException
 import uz.instat.rickandmorty.common.Constants
 import uz.instat.rickandmorty.common.nextKey
 import uz.instat.rickandmorty.common.prevKey
@@ -12,9 +13,9 @@ import uz.instat.rickandmorty.data.local.AppDataBase
 import uz.instat.rickandmorty.data.model.character.CharacterKeys
 import uz.instat.rickandmorty.data.model.character.CharacterModel
 import uz.instat.rickandmorty.data.remote.ApiService
-import java.io.InvalidObjectException
+import java.io.IOException
 
-@ExperimentalPagingApi
+@OptIn(ExperimentalPagingApi::class)
 class CharacterMediator(private val apiService: ApiService, private val appDatabase: AppDataBase) :
     RemoteMediator<Int, CharacterModel>() {
 
@@ -23,13 +24,22 @@ class CharacterMediator(private val apiService: ApiService, private val appDatab
         state: PagingState<Int, CharacterModel>
     ): MediatorResult {
 
-        val pageKeyData = getKeyPageData(loadType, state)
-        val page = when (pageKeyData) {
-            is MediatorResult.Success -> {
-                return pageKeyData
+        val page = when (loadType) {
+            LoadType.REFRESH -> {
+                val remoteKeys = getClosesRemoteKey(state)
+                remoteKeys?.nextKey?.minus(1) ?: Constants.DEFAULT_CHARACTERS_PAGE_INDEX
             }
-            else -> {
-                pageKeyData as Int
+            LoadType.PREPEND -> {
+                val remoteKeys = getFirstRemoteKey(state)
+                val prevKey = remoteKeys?.prevKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                prevKey
+            }
+            LoadType.APPEND -> {
+                val remoteKeys = getLastRemoteKey(state)
+                val nextKey = remoteKeys?.nextKey
+                    ?: return MediatorResult.Success(endOfPaginationReached = remoteKeys != null)
+                nextKey
             }
         }
 
@@ -53,38 +63,14 @@ class CharacterMediator(private val apiService: ApiService, private val appDatab
                 val keys = result.map {
                     CharacterKeys(repoId = it.id, prevKey = prevKey, nextKey = nextKey)
                 }
-                appDatabase.characterKeysDao().insertAll(keys)
                 appDatabase.characterDao().insertAll(result)
+                appDatabase.characterKeysDao().insertAll(keys)
             }
             return MediatorResult.Success(endOfPaginationReached = isEndOfList)
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             return MediatorResult.Error(e)
-        }
-    }
-
-    private suspend fun getKeyPageData(
-        loadType: LoadType,
-        state: PagingState<Int, CharacterModel>
-    ): Any? {
-        return when (loadType) {
-            LoadType.REFRESH -> {
-                val remoteKeys = getClosesRemoteKey(state)
-                remoteKeys?.prevKey?.plus(1) ?: Constants.DEFAULT_CHARACTERS_PAGE_INDEX
-            }
-            LoadType.PREPEND -> {
-                val remoteKeys = getFirstRemoteKey(state)
-                    ?: return Constants.DEFAULT_CHARACTERS_PAGE_INDEX
-                //throw InvalidObjectException("Invalid state, key should not be null")
-                remoteKeys.prevKey ?: return MediatorResult.Success(endOfPaginationReached = true)
-                remoteKeys.prevKey
-            }
-            LoadType.APPEND -> {
-                val remoteKeys = getLastRemoteKey(state)
-                    ?: throw InvalidObjectException("Remote key should not be null for $loadType")
-                remoteKeys.nextKey
-            }
-            else -> {
-            }
+        } catch (e: HttpException) {
+            return MediatorResult.Error(e)
         }
     }
 
@@ -92,14 +78,18 @@ class CharacterMediator(private val apiService: ApiService, private val appDatab
         return state.pages
             .firstOrNull { it.data.isNotEmpty() }
             ?.data?.firstOrNull()
-            ?.let { character -> appDatabase.characterKeysDao().remoteKeysCharacterId(character.id) }
+            ?.let { character ->
+                appDatabase.characterKeysDao().remoteKeysCharacterId(character.id)
+            }
     }
 
     private suspend fun getLastRemoteKey(state: PagingState<Int, CharacterModel>): CharacterKeys? {
         return state.pages
             .lastOrNull { it.data.isNotEmpty() }
             ?.data?.lastOrNull()
-            ?.let { character -> appDatabase.characterKeysDao().remoteKeysCharacterId(character.id) }
+            ?.let { character ->
+                appDatabase.characterKeysDao().remoteKeysCharacterId(character.id)
+            }
     }
 
     private suspend fun getClosesRemoteKey(state: PagingState<Int, CharacterModel>): CharacterKeys? {

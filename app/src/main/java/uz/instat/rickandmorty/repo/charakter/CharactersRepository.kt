@@ -16,7 +16,7 @@ import uz.instat.rickandmorty.data.remote.RemoteInjector
 
 class CharactersRepository(
     private val apiService: ApiService = RemoteInjector.injectApiService()!!,
-    private val appDataBase: AppDataBase? = LocalInjector.injectDb()
+    private val appDataBase: AppDataBase = LocalInjector.injectDb()!!
 ) {
 
     companion object {
@@ -27,20 +27,22 @@ class CharactersRepository(
     fun getCharactersFlow(pagingConfig: PagingConfig = getDefaultPageConfig()): Flow<PagingData<CharacterModel>> {
         return Pager(
             config = pagingConfig,
-            pagingSourceFactory = { CharactersPagingSource(apiService) }
+            pagingSourceFactory = { CharactersPagingSource(apiService) },
+            remoteMediator = CharacterMediator(apiService, appDataBase)
+
         ).flow
     }
 
     private fun getDefaultPageConfig(): PagingConfig {
         return PagingConfig(
             pageSize = Constants.DEFAULT_CHARACTERS_PAGE_SIZE,
+            prefetchDistance = 1,
             enablePlaceholders = true
         )
     }
 
     @ExperimentalPagingApi
     fun getCharactersFlowDb(pagingConfig: PagingConfig = getDefaultPageConfig()): Flow<PagingData<CharacterModel>> {
-        if (appDataBase == null) throw IllegalStateException("Database is not initialized")
 
         val pagingSourceFactory = { appDataBase.characterDao().getAllCharacter() }
         return Pager(
@@ -51,7 +53,6 @@ class CharactersRepository(
     }
 
     fun getCharacterFlowDb(id: Long): Flow<CharacterModel> {
-        if (appDataBase == null) throw IllegalStateException("Database is not initialized")
 
         return flow {
             var character: CharacterModel? = appDataBase.characterDao().getCharacter(id)
@@ -67,7 +68,6 @@ class CharactersRepository(
     }
 
     fun getEpisodesInCharacter(ids: List<Long>): Flow<List<EpisodeModel>> {
-        if (appDataBase == null) throw IllegalStateException("Database is not initialized")
 
         return flow {
             val episodeList = mutableListOf<EpisodeModel>()

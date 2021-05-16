@@ -33,7 +33,7 @@ class EpisodesRepository(
     private fun getDefaultPageConfig(): PagingConfig {
         return PagingConfig(
             pageSize = Constants.DEFAULT_EPISODES_PAGE_SIZE,
-            prefetchDistance = 1,
+            prefetchDistance = 2,
             enablePlaceholders = true
         )
     }
